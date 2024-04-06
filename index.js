@@ -18,21 +18,31 @@ app.get("/", function (req, res) {
   res.sendFile(process.cwd() + "/views/index.html");
 });
 
-let addresses = {};
+let local_addresses = {};
 
 app.get("/api/shorturl/:url", (req, res) => {
   const { url } = req.params;
-  res.redirect(addresses[url]);
+  res.redirect(local_addresses[url]);
 });
+
+function extractDomain(url) {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.hostname;
+  } catch (error) {
+    return null;
+  }
+}
 
 app.post("/api/shorturl", (req, res) => {
   const { url } = req.body;
-  dns.lookup(url, (err, addresses) => {
+  const domain = extractDomain(url);
+  dns.lookup(domain, (err, addresses) => {
     if (err) {
       res.json({ error: "invalid url" });
     } else {
-      const short_url = Object.keys(addresses).length + 1; // Generate unique short_url
-      addresses[short_url] = url;
+      const short_url = Object.keys(local_addresses).length + 1; // Generate unique short_url
+      local_addresses[short_url] = url;
       res.json({
         original_url: `${url}`,
         short_url: short_url,
