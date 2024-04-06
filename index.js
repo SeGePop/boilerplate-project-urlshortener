@@ -20,15 +20,6 @@ app.get("/", function (req, res) {
 
 let addresses = {};
 
-function isValidUrl(string) {
-  try {
-    new URL(string);
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
 app.get("/api/shorturl/:url", (req, res) => {
   const { url } = req.params;
   res.redirect(addresses[url]);
@@ -36,15 +27,18 @@ app.get("/api/shorturl/:url", (req, res) => {
 
 app.post("/api/shorturl", (req, res) => {
   const { url } = req.body;
-  if(isValidUrl(url)){
-  const short_url = Object.keys(addresses).length + 1; // Generate unique short_url
-  addresses[short_url] = url;
-  res.json({
-    original_url: `${url}`,
-    short_url: short_url,
-  });}
-  else
-  res.json({ error: 'invalid url' })
+  dns.lookup(url, (err, addresses) => {
+    if (err) {
+      res.json({ error: "invalid url" });
+    } else {
+      const short_url = Object.keys(addresses).length + 1; // Generate unique short_url
+      addresses[short_url] = url;
+      res.json({
+        original_url: `${url}`,
+        short_url: short_url,
+      });
+    }
+  });
 });
 
 app.listen(port, function () {
